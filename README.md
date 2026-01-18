@@ -63,12 +63,7 @@ Gracefully handles missing files, invalid JSON, bad data types, null values, and
 - Exit code 0 = Success
 - Exit code 1 = Failure
 
-## Project Structure
 
-```
-├── challenge.rb          # Main application
-├── users.json           # Sample data
-├── companies.json       # Sample data
 ├── README.md
 └── spec/
     └── challenge_spec.rb # Test suite
