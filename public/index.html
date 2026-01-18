@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Token Top-Up Processor</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .header {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      }
+
+      .header h1 {
+        color: #667eea;
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        color: #666;
+        font-size: 1.1rem;
+      }
+
+      .upload-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+
+      .upload-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+      }
+
+      .upload-card:hover {
+        transform: translateY(-5px);
+      }
+
+      .upload-card h2 {
+        color: #333;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+      }
+
+      .upload-area {
+        border: 3px dashed #667eea;
+        border-radius: 15px;
+        padding: 40px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #f8f9ff;
+      }
+
+      .upload-area:hover {
+        background: #eef0ff;
+        border-color: #764ba2;
+      }
+
+      .upload-area.uploaded {
+        border-color: #10b981;
+        background: #ecfdf5;
+      }
+
+      .upload-icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+      }
+
+      .file-input {
+        display: none;
+      }
+
+      .process-btn {
+        display: block;
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto 30px;
+        padding: 20px 40px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 15px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+      }
+
+      .process-btn:hover:not(:disabled) {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+      }
+
+      .process-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        margin: 30px 0;
+      }
+
+      .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .error {
+        background: #fee;
+        color: #c33;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        display: none;
+        box-shadow: 0 5px 20px rgba(204, 51, 51, 0.2);
+      }
+
+      .results {
+        display: none;
+      }
+
+      .result-header {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        margin-bottom: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .download-btn {
+        padding: 15px 30px;
+        background: #10b981;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .download-btn:hover {
+        background: #059669;
+        transform: scale(1.05);
+      }
+
+      .company-card {
+        background: white;
+        border-radius: 20px;
+        margin-bottom: 20px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      }
+
+      .company-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+      }
+
+      .company-header h3 {
+        font-size: 1.8rem;
+        margin-bottom: 10px;
+      }
+
+      .company-stats {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .stat {
+        text-align: center;
+      }
+
+      .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-bottom: 5px;
+      }
+
+      .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+      }
+
+      .users-list {
+        padding: 30px;
+      }
+
+      .user-card {
+        background: #f8f9ff;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+      }
+
+      .user-card:hover {
+        background: #eef0ff;
+        transform: translateX(5px);
+      }
+
+      .user-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .user-name {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #333;
+      }
+
+      .email-badge {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: bold;
+      }
+
+      .email-sent {
+        background: #d1fae5;
+        color: #065f46;
+      }
+
+      .email-not-sent {
+        background: #e5e7eb;
+        color: #6b7280;
+      }
+
+      .token-info {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        padding-top: 15px;
+        border-top: 2px solid #e5e7eb;
+      }
+
+      .token-item {
+        text-align: center;
+      }
+
+      .token-label {
+        font-size: 0.85rem;
+        color: #666;
+        margin-bottom: 5px;
+      }
+
+      .token-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+      }
+
+      .token-value.previous {
+        color: #6b7280;
+      }
+
+      .token-value.topup {
+        color: #667eea;
+      }
+
+      .token-value.new {
+        color: #10b981;
+      }
+
+      @media (max-width: 768px) {
+        .upload-section {
+          grid-template-columns: 1fr;
+        }
+
+        .token-info {
+          grid-template-columns: 1fr;
+        }
+
+        .company-stats {
+          flex-direction: column;
+          gap: 15px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <h1>💎 Token Top-Up Processor</h1>
+        <p>Upload your JSON files and process token top-ups instantly</p>
+      </div>
+
+      <!-- Upload Section -->
+      <div class="upload-section">
+        <div class="upload-card">
+          <h2>👥 Users File</h2>
+          <div
+            class="upload-area"
+            id="usersUpload"
+            onclick="document.getElementById('usersFile').click()"
+          >
+            <div class="upload-icon">📤</div>
+            <p id="usersLabel">Click to upload users.json</p>
+          </div>
+          <input
+            type="file"
+            id="usersFile"
+            class="file-input"
+            accept=".json"
+            onchange="handleFileUpload(event, 'users')"
+          />
+        </div>
+
+        <div class="upload-card">
+          <h2>🏢 Companies File</h2>
+          <div
+            class="upload-area"
+            id="companiesUpload"
+            onclick="document.getElementById('companiesFile').click()"
+          >
+            <div class="upload-icon">📤</div>
+            <p id="companiesLabel">Click to upload companies.json</p>
+          </div>
+          <input
+            type="file"
+            id="companiesFile"
+            class="file-input"
+            accept=".json"
+            onchange="handleFileUpload(event, 'companies')"
+          />
+        </div>
+      </div>
+
+      <!-- Process Button -->
+      <button
+        class="process-btn"
+        id="processBtn"
+        disabled
+        onclick="processData()"
+      >
+        🚀 Process Data
+      </button>
+
+      <!-- Loading -->
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p style="margin-top: 20px; color: white; font-size: 1.2rem">
+          Processing...
+        </p>
+      </div>
+
+      <!-- Error -->
+      <div class="error" id="error"></div>
+
+      <!-- Results -->
+      <div class="results" id="results">
+        <div class="result-header">
+          <h2 style="color: #333; font-size: 1.8rem">📊 Processing Results</h2>
+          <button class="download-btn" onclick="downloadOutput()">
+            ⬇️ Download Output
+          </button>
+        </div>
+        <div id="resultContent"></div>
+      </div>
+    </div>
+
+    <script>
+      let usersData = null;
+      let companiesData = null;
+      let outputText = "";
+
+      function handleFileUpload(event, type) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          try {
+            const data = JSON.parse(e.target.result);
+
+            if (type === "users") {
+              usersData = data;
+              document.getElementById("usersUpload").classList.add("uploaded");
+              document.getElementById("usersLabel").textContent =
+                "✅ Users file uploaded";
+            } else {
+              companiesData = data;
+              document
+                .getElementById("companiesUpload")
+                .classList.add("uploaded");
+              document.getElementById("companiesLabel").textContent =
+                "✅ Companies file uploaded";
+            }
+
+            // Enable button if both files uploaded
+            if (usersData && companiesData) {
+              document.getElementById("processBtn").disabled = false;
+            }
+
+            hideError();
+          } catch (err) {
+            showError(`Invalid JSON in ${type} file: ${err.message}`);
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      async function processData() {
+        if (!usersData || !companiesData) {
+          showError("Please upload both files");
+          return;
+        }
+
+        hideError();
+        document.getElementById("loading").style.display = "block";
+        document.getElementById("results").style.display = "none";
+
+        try {
+          const response = await fetch("http://localhost:4567/api/process", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              users: usersData,
+              companies: companiesData,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            outputText = data.output;
+            displayResults(data.result);
+          } else {
+            showError(data.error || "Processing failed");
+          }
+        } catch (err) {
+          showError(
+            `Error: ${err.message}. Make sure the server is running on port 4567.`
+          );
+        } finally {
+          document.getElementById("loading").style.display = "none";
+        }
+      }
+
+      function displayResults(result) {
+        const content = document.getElementById("resultContent");
+        content.innerHTML = "";
+
+        if (!result || result.length === 0) {
+          content.innerHTML =
+            '<div class="company-card"><div style="padding: 40px; text-align: center;"><h3>No eligible users found</h3><p>No active users matched the criteria for token top-ups.</p></div></div>';
+          document.getElementById("results").style.display = "block";
+          return;
+        }
+
+        result.forEach((item) => {
+          const card = document.createElement("div");
+          card.className = "company-card";
+
+          const usersHtml = item.users
+            .map(
+              (user) => `
+          <div class="user-card">
+            <div class="user-header">
+              <div>
+                <div class="user-name">${user.last_name}, ${
+                user.first_name
+              }</div>
+                <div style="color: #666; font-size: 0.9rem;">${user.email}</div>
+              </div>
+              <span class="email-badge ${
+                user.email_sent ? "email-sent" : "email-not-sent"
+              }">
+                ${user.email_sent ? "✅ Email Sent" : "❌ Email Not Sent"}
+              </span>
+            </div>
+            <div class="token-info">
+              <div class="token-item">
+                <div class="token-label">Previous Balance</div>
+                <div class="token-value previous">${user.tokens}</div>
+              </div>
+              <div class="token-item">
+                <div class="token-label">Top-up Amount</div>
+                <div class="token-value topup">+${user.top_up_amount}</div>
+              </div>
+              <div class="token-item">
+                <div class="token-label">New Balance</div>
+                <div class="token-value new">${user.new_balance}</div>
+              </div>
+            </div>
+          </div>
+        `
+            )
+            .join("");
+
+          card.innerHTML = `
+          <div class="company-header">
+            <h3>${item.company.name}</h3>
+            <div class="company-stats">
+              <div class="stat">
+                <div class="stat-label">Company ID</div>
+                <div class="stat-value">${item.company.id}</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Users Processed</div>
+                <div class="stat-value">${item.users.length}</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Total Top-ups</div>
+                <div class="stat-value">${item.total_top_up}</div>
+              </div>
+            </div>
+          </div>
+          <div class="users-list">
+            <h4 style="margin-bottom: 20px; color: #333;">Users Emailed</h4>
+            ${usersHtml}
+          </div>
+        `;
+
+          content.appendChild(card);
+        });
+
+        document.getElementById("results").style.display = "block";
+      }
+
+      function downloadOutput() {
+        const blob = new Blob([outputText], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "output.txt";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      function showError(message) {
+        const errorDiv = document.getElementById("error");
+        errorDiv.textContent = "⚠️ " + message;
+        errorDiv.style.display = "block";
+      }
+
+      function hideError() {
+        document.getElementById("error").style.display = "none";
+      }
+    </script>
+  </body>
+</html>
